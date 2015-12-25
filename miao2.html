@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+    <title>批量上传</title>
+    <script src="js/jquery-1.11.3.min.js"></script>
+</head>
+
+<body>
+    <div style="margin-top: 10px; margin-left: 180px">  
+    <input id="specialrecommendfile" type="file" size="30"  
+    name="file">  
+    <button type="button" onclick="UploadSpecialRecommendPic()"  
+    class="btn btn-warning btn-lg">上传</button>  
+    <input type=hidden class="span5" id="specialRecommendPic"  
+    name="riIndexPic">
+    <script>
+        function UploadSpecialRecommendPic() {  
+    $.ajaxFileUpload({  
+        url : '/GZZSServer/s_util/uploadSpecialRecommendPic.action',  
+        secureuri : false,  
+        fileElementId : 'specialrecommendfile',  
+        dataType : 'json',  
+        success : function(d, status) {  
+            var data = eval('(' + d + ')');  
+            alert(data.msg);  
+            if (data.flag == 1) {  
+                $("#SpecialTopicPicShow").attr("src", data.path);  
+                $("#specialRecommendPic").val(data.picName);  
+            }  
+        },  
+        error : function(data, status, e) {  
+            alert(e);  
+        }  
+    });  
+} 
+    </script>  
+</div>  
+</body>
+
+</html>

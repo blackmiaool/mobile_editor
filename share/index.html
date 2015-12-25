@@ -1,0 +1,592 @@
+<!DOCTYPE HTML>
+<!--
+/*
+ * jQuery File Upload Plugin Demo
+ * https://github.com/blueimp/jQuery-File-Upload
+ *
+ * Copyright 2010, Sebastian Tschan
+ * https://blueimp.net
+ *
+ * Licensed under the MIT license:
+ * http://www.opensource.org/licenses/MIT
+ */
+-->
+<html lang="en">
+
+<head>
+    <!-- Force latest IE rendering engine or ChromeFrame if installed -->
+    <!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+    <meta charset="UTF-8">
+    <title>分享编辑器</title>
+
+    <!-- Bootstrap styles -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <!-- Generic page styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- blueimp Gallery styles -->
+    <script src="../js/jquery/jquery-1.11.3.min.js"></script>
+    <script src="../js/jquery.ocupload.js"></script>
+
+    <style>
+        h3 {
+            text-align: center;
+        }
+        
+        .form-wrap {
+            margin-bottom: 15px;
+        }
+        
+        .form-wrap img {
+            height: 100px;
+        }
+        
+        .share_way {
+            margin-right: 25px;
+            display: inline-block;
+            margin-bottom: 20px;
+            position: relative;
+            top: -30px;
+        }
+        
+        .share_select {
+            position: relative;
+            display: inline-block;
+            margin-right: 5px;
+            padding-right: 10px;
+            margin-left: 0px;
+            padding-left: 10px;
+        }
+        
+        .share_select:before {
+            content: "";
+            /*
+            border-left: 4px solid #555;            
+            
+            
+            left: -5px;
+            
+*/
+            border: 4px solid transparent;
+            position: absolute;
+            border-left-color: #555;
+            border-top-left-radius: 35px;
+            border-bottom-left-radius: 35px;
+            width: 20px;
+            left: -5px;
+            top: 0;
+            bottom: 0;
+        }
+        
+        .share_select:after {
+            content: "";
+            border-top: 4px solid #555;
+            width: 15px;
+            height: 0px;
+            position: absolute;
+            left: -18px;
+            top: 45%;
+        }
+        
+        .share_select label {
+            display: block;
+            position: relative;
+        }
+        
+        .share_select label:last-child {
+            margin-bottom: 0px;
+        }
+        /*
+        .share_select label:before{
+            content:"";
+            border-top: 4px solid #555;
+            width: 10px;
+            height: 0px;
+            position: absolute;
+            top:10px;
+            left: -12px;
+        }
+*/
+        
+        .preview {
+            margin: 30px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h3>分享编辑器</h3>
+        <div class="form-wrap">
+            <label for="" class="title">标题</label>
+            <input type="text" class="title form-control">
+        </div>
+        <div class="form-wrap">
+            <label for="" class="url">Url</label>
+            <input type="text" class="url form-control">
+        </div>
+
+        <div class="form-wrap">
+            <label for="" class="content">内容</label>
+            <textarea name="" id="" cols="30" rows="3" class="content form-control"></textarea>
+        </div>
+        <div class="form-wrap">
+            <label for="" class="wbcontent ">微博内容(可选)</label>
+            <textarea name="" id="" cols="30" rows="3" class="wbcontent form-control"></textarea>
+        </div>
+        <div class="form-wrap" data-name="thumb">
+            <label>上传缩略图</label>
+            <br>
+            <button id="upload1">选择上传文件</button>
+
+        </div>
+        <div class="form-wrap" data-name="pic">
+            <label>上传长图</label>
+            <br>
+            <button id="upload2">选择上传文件</button>
+
+        </div>
+        <div class="form-wrap" data-name="img">
+            <label>上传组图</label>
+            <br>
+            <button id="upload3">选择上传文件</button>
+
+        </div>
+        <div class="form-wrap">
+            <label>选择渠道</label>
+            <br>
+            <div class="share_wrap">
+                <label class="share_way ml">米聊
+                    <br>
+                </label>
+
+                <div class="share_select">
+                    <label>
+                        <input type="radio" name="ml" value="link">链接</label>
+                    <label>
+                        <input type="radio" name="ml" value="one">长图</label>
+                    <label>
+                        <input type="radio" name="ml" value="more">多图</label>
+                </div>
+
+
+                <label class="share_way wx">微信朋友</label>
+
+                <div class="share_select">
+                    <label>
+                        <input type="radio" name="wx" value="link">链接</label>
+                    <label>
+                        <input type="radio" name="wx" value="one">长图</label>
+                    <label>
+                        <input type="radio" name="wx" value="more">多图</label>
+                </div>
+
+
+                <label class="share_way pyq">朋友圈</label>
+
+                <div class="share_select">
+                    <label>
+                        <input type="radio" name="pyq" value="link">链接</label>
+                    <label>
+                        <input type="radio" name="pyq" value="one">长图</label>
+                    <label>
+                        <input type="radio" name="pyq" value="more">多图</label>
+                </div>
+
+
+                <label class="share_way wb">微博</label>
+
+                <div class="share_select">
+                    <label>
+                        <input type="radio" name="wb" value="link">链接</label>
+                    <label>
+                        <input type="radio" name="wb" value="one">长图</label>
+                    <label>
+                        <input type="radio" name="wb" value="more">多图</label>
+                </div>
+            </div>
+
+
+        </div>
+
+        <button class="btn btn-primary" id="submit" style="display:block;text-align:center;">提交</button>
+        <div class="form-wrap preview">
+            <label>内容预览</label>
+            <textarea name="" id="preview" cols="50" rows="10" class=" form-control"></textarea>
+        </div>
+    </div>
+    <script>
+        var share_ways = ["ml", "wb", "wx", "pyq"];
+        var pic_kinds = ["thumb", "pic", "img"];
+        var pic_nums = {
+            thumb: 1,
+            pic: 1,
+            img: Infinity
+        };
+        var wrap_class = "img-wrap";
+        var wrap_selector = "." + wrap_class;
+
+        function m_upload($dom, config) {
+            if (config.num == undefined) {
+                config.num = 1;
+            }
+            $dom.upload(params_handle({
+                onSubmit: function () {},
+                onComplete: function (data) {
+                    var container = $dom.parent().parent();
+                    console.log(data)
+                    var data = JSON.parse(data);
+                    var img = $("<img src=" + data.result + ">");
+                    var btn_up = $("<button class='btn up'>上移</button>");
+                    var btn_down = $("<button class='btn down'>下移</button>");
+
+                    var wrap = $("<div ><button class='btn delete'>删除</button></div>");
+                    wrap.addClass(wrap_class);
+
+                    if (config.num != 1) {
+                        wrap.append(btn_up);
+                        wrap.append(btn_down);
+                    }
+                    wrap.prepend(img);
+                    var wraps = container.find(wrap_selector);
+                    if (config.num == wraps.length) {
+                        wraps.last().remove();
+                    }
+                    container.append(wrap);
+                    radio_update();
+                },
+                onSelect: function () {}
+            }));
+        }
+
+        function radio_update() {
+            var thumb_imgs = $("#upload1").parent().parent().find("img");
+            var long_imgs = $("#upload2").parent().parent().find("img");
+            var more_imgs = $("#upload3").parent().parent().find("img");
+
+
+            if (!long_imgs.length) {
+                $(".share_select").each(function () {
+                    $(this).find("input:nth(1)").attr("disabled", "");
+                })
+
+            } else {
+                $(".share_select").each(function () {
+                    $(this).find("input:nth(1)").removeAttr("disabled");
+                })
+            }
+
+
+            if (!more_imgs.length) {
+                $(".share_select").each(function () {
+                    $(this).find("input:nth(2)").attr("disabled", "");
+                })
+
+            } else {
+                $(".share_select").each(function () {
+                    $(this).find("input:nth(2)").removeAttr("disabled");
+                })
+            }
+        }
+        radio_update();
+        m_upload($("#upload1"), {
+            num: pic_nums.thumb
+        });
+        m_upload($("#upload2"), {
+            num: pic_nums.pic
+        });
+        m_upload($("#upload3"), {
+            num: pic_nums.img
+        });
+
+
+        function getArguments(str) {
+            var nowAry = null;
+            var createA = null;
+            var _str = "";
+            if (str) {
+                createA = window.document.createElement("a");
+                createA.href = str;
+                _str = createA.search && createA.search.replace("?", "");
+                if (_str) {
+                    nowAry = _str.split("&");
+                }
+            }
+            var arg = nowAry || window.location.search.replace("?", "").split("&");
+            var res = {};
+            var tem = [];
+            for (var i = arg.length - 1; i >= 0; i--) {
+                tem = arg[i].split("=");
+                res[tem[0]] = tem[1];
+            }
+            var path = location.pathname;
+            var page = path.slice(path.lastIndexOf("/") + 1);
+            if (page) {
+                res.page = page.toLowerCase();
+            }
+
+            return res;
+        }
+
+        console.log(getArguments());
+        var url = getArguments().url;
+        if (url) {
+            url = decodeURIComponent(url);
+            url = "http://" + url;
+            console.log(url);
+
+            function pre_data_handle(response) {
+                eval("var data=" + response + ";");
+                console.log(data);
+                if (data.code) {
+                    alert("服务器通信错误，错误码：" + data.code);
+                } else {
+                    $("input.title").val(data.data.title);
+                    $("input.url").val(data.data.url);
+                    $("textarea.content").val(data.data.content);
+                    $("textarea.wbcontent").val(data.data.wbContent);
+                    $("input").removeAttr("checked");
+                    for (var i in share_ways) {
+                        console.log(data.data[share_ways[i]]);
+                        console.log("input[name='" + share_ways[i] + "'][value='" + data.data[share_ways[i]] + "']");
+                        $("input[name='" + share_ways[i] + "'][value='" + data.data[share_ways[i]] + "']").attr("checked", "checked");
+                    }
+                    var pics = data.data.pics;
+                    pics = pics.slice(39);
+                    pics = pics.replace(/_/g, "-");
+                    pics = pics.split("-");
+
+                    var current_key = "";
+                    var pics_map = {};
+                    pics.forEach(function (v, i) {
+                        if (pic_kinds.indexOf(v) != -1) {
+                            current_key = v;
+                        } else {
+                            if (!pics_map[current_key])
+                                pics_map[current_key] = []
+                            pics_map[current_key].push(v);
+                        }
+
+                    })
+                    if (pics_map.pic.length > 1) {
+                        pics_map.img = pics_map.pic.splice(1);
+                        pics_map.pic.length = 1;
+                    }
+                    console.log(pics_map);
+
+
+
+
+
+
+                    for (var i in pics_map) {
+                        pics_map[i].forEach(function (v, j) {
+                            var container = $(".form-wrap[data-name='" + i + "']");
+                            var img = $("<img src=http://static.home.mi.com/app/shop/img?id=shop_" + v + ".jpg>");
+                            var btn_up = $("<button class='btn up'>上移</button>");
+                            var btn_down = $("<button class='btn down'>下移</button>");
+
+                            var wrap = $("<div ><button class='btn delete'>删除</button></div>");
+                            wrap.addClass(wrap_class);
+
+                            if (pic_nums[i] != 1) {
+                                wrap.append(btn_up);
+                                wrap.append(btn_down);
+                            }
+                            wrap.prepend(img);
+                            var wraps = container.find(wrap_selector);
+                            if (pic_nums[i] == wraps.length) {
+                                wraps.last().remove();
+                            }
+                            container.append(wrap);
+
+                        })
+
+                    }
+                    radio_update();
+
+
+
+
+
+
+
+
+
+                }
+            }
+
+
+
+            $.ajax({
+                type: 'GET',
+                url: url,
+                data: {},
+                //                dataType: "json",
+                timeout: 5000,
+                success: function (response) {
+                    pre_data_handle(response);
+
+                },
+                error: function (response) {
+                    console.log(response);
+                    //                    pre_data_handle(response);                   
+                },
+            });
+        } else {
+            $(".share_select").each(function () {
+                $(this).find("input").eq(0).attr("checked", "");
+            })
+        }
+        //        url=decodeURI(url);
+
+
+        console.log("pro")
+
+        function params_handle(params) {
+            params.name = "pic";
+            params.action = "../../shop/uploadpic";
+            params.enctype = 'multipart/form-data';
+            params.params = {};
+            params.autoSubmit = true;
+            return params;
+        }
+
+        $(".container").on("click", ".btn.delete", function () {
+            var wrap = $(this).parent();
+            wrap.remove();
+            radio_update();
+        })
+        $(".container").on("click", ".btn.up", function () {
+            var wrap = $(this).parent();
+            if (wrap.prev().is(wrap_selector)) {
+                wrap.after(wrap.prev());
+            }
+
+        })
+        $(".container").on("click", ".btn.down", function () {
+            var wrap = $(this).parent();
+            if (wrap.next().is(wrap_selector)) {
+                wrap.before(wrap.next());
+            }
+        })
+
+        $("#submit").click(function () {
+            var title = $("input.title").val();
+            var url = $("input.url").val();
+            var content = $("textarea.content").val();
+            var wb_content = $("textarea.wbcontent").val();
+
+
+            var thumb_imgs = $("#upload1").parent().parent().find("img");
+            if (thumb_imgs.length) {
+                var thumb = thumb_imgs.attr("src").split("shop_")[1].split(".jpg")[0];
+            }
+
+
+            var long_imgs = $("#upload2").parent().parent().find("img");
+            if (long_imgs.length) {
+                var long = long_imgs.attr("src").split("shop_")[1].split(".jpg")[0];
+            }
+
+            var more_imgs = $("#upload3").parent().parent().find("img");
+            var more_pic = [];
+            if (more_imgs.length) {
+                more_imgs.each(function () {
+                    more_pic.push($(this).attr("src").split("shop_")[1].split(".jpg")[0]);
+                })
+            }
+
+            var img = "";
+            if (thumb || long || more_pic.length) {
+                img = "http://api.io.mi.com/app/shop/zimg?ids=";
+                var index = 0;
+                if (thumb) {
+                    img += "thumb_";
+                    img += thumb;
+                    index++;
+                }
+
+                if (index)
+                    img += "-";
+                else
+                    index++;
+                img += "pics_";
+                if (long) {
+                    img += long;
+                }
+                if (more_pic.length) {
+                    more_pic.forEach(function (v, i) {
+                        img += "-";
+                        img += v;
+
+                    })
+                }
+            }
+            var params = {};
+            if (title) {
+                params.title = title;
+            } else {
+                alert("还没填标题");
+                return;
+            }
+            if (url) {
+                params.url = url;
+            } else {
+                alert("还没填url");
+                return;
+            }
+            if (content) {
+                params.content = content;
+            } else {
+                alert("还没填内容");
+                return;
+            }
+            var return_this = false;
+            $("input:checked").each(function () {
+                if ($(this).attr("disabled") != undefined) {
+                    return_this = true;
+                }
+            })
+            if (return_this) {
+                alert("存在失效的渠道选项");
+                return;
+            }
+            if (wb_content) {
+                params.wbContent = wb_content;
+            }
+            if (img) {
+                params.pics = img;
+            }
+            $("input:checked").each(function () {
+                params[$(this).attr("name")] = $(this).attr("value");
+            })
+
+            $("#preview").val(JSON.stringify(params));
+            $.ajax({
+                type: 'POST',
+                url: "http://support.io.mi.srv/shop/share",
+                data: JSON.stringify(params),
+                dataType: "json",
+                timeout: 5000,
+                success: function (response) {
+                    alert("提交成功");
+                },
+                error: function (response) {
+                    console.log(response);
+                    eval("var data=" + response.responseText + ";");
+                    if(!data.code){
+                        alert("提交成功");
+                    }
+                },
+            });
+
+
+
+        })
+    </script>
+    <script src="http://localhost:35729/livereload.js?snipver=1"></script>
+</body>
+
+</html>

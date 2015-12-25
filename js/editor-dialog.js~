@@ -1,0 +1,819 @@
+var the_url="http://support.io.mi.srv/common/if_editor_data";
+//the_url="http://localhost:8088//common/if_editor_data"
+angular.module("demo", ["dndLists", "contenteditable", "ngAnimate", "ngRoute"])
+    .animation('.editor-document-slide', function () {
+        var NG_HIDE_CLASS = 'ng-hide';
+        return {
+            beforeAddClass: function (element, className, done) {
+                if (className === NG_HIDE_CLASS) {
+                    element.slideUp(done);
+                }
+            },
+            removeClass: function (element, className, done) {
+                if (className === NG_HIDE_CLASS) {
+                    element.hide().slideDown(done);
+                }
+            }
+        }
+    })
+    .factory("globalPropData", function () {
+        return new function () {
+            this.prop = {}
+
+        }
+    })
+.config( [
+    '$compileProvider',
+    function( $compileProvider )
+    {   
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|chrome-extension|smarthome):/);
+        // Angular before v1.2 uses $compileProvider.urlSanitizationWhitelist(...)
+    }
+])
+    .controller("globalPropController", ["$scope", "globalPropData", function ($scope, globalPropData) {
+        var prop = $("#global_prop_tab>div");
+        prop.jsonForm(general_block_form);
+        prop.find(".jsonform-submit").click(
+            function () {
+                $scope.$apply(
+                    function () {
+                        var values = JSONForm.getFormValue(prop);
+                        globalPropData.prop.style = values;
+                        //                    for (var i in values) {
+                        //                        globalPropData.prop.style[i] = values[i];
+                        //                    }
+
+                        console.log(values)
+                     
+                    }
+                )
+            })
+
+
+    }])
+    .controller("documentListController", ["$scope", "$http", "modelData", "$timeout", function ($scope, $http, modelData, $timeout) {
+
+        $scope.update_list = function () {
+            $http({
+                method: 'POST',
+                url: the_url,
+                data: {
+                    action: "list",
+                }
+            }).
+            success(function (data, status, headers, config) {
+                console.log(data)
+                $scope.list = data.result.list;
+                //            modelData.models=$scope.models;
+                //            console.log(data);
+            }).
+            error(function (data, status, headers, config) {
+                alert(status);
+            });
+        }
+        $scope.update_list();
+        $scope.select = function ($index) {
+
+        }
+        $scope.edit = function (id) {
+                $http({
+                    method: 'POST',
+                    url: the_url,
+                    data: {
+                        action: "get",
+                        id: id,
+                    }
+                }).
+                success(function (data, status, headers, config) {
+                    console.log(data)
+                    modelData.models.lists = {};
+                    $timeout(
+                        function () {
+                            modelData.models.lists = JSON.parse(data.result.content).lists;
+                            var globalPropData=JSON.parse(data.result.content).globalPropData;
+                            for(var i in globalPropData){
+                                modelData.models.globalPropData[i] = globalPropData[i];
+                            }
+                            
+                            $scope.$parent.document_id = id;
+                            $scope.$parent.title = data.result.title;
+                        }, 300, true
+                    )
+                }).
+                error(function (data, status, headers, config) {
+                    alert(status);
+                });
+            }
+            //        $scope.$watch("$parent.saving",function(value){
+            //            if(value===false){
+            //                update_list();
+            //            }
+            //            
+            //        })
+    }])
+    .controller("rootController", ["$scope", "$http", function ($scope, $http) {
+        $scope.title = "未命名文档";
+        $scope.select = function (index) {
+            //            console.log("www")
+            $scope.current_tab = index;
+        }
+        $scope.saving = false;
+        $scope.export = function () {
+            editor_export(
+                function (data) {
+                    var id;
+                    if (!$scope.document_id) {
+                        id = undefined;
+                    } else {
+                        id = $scope.document_id;
+                    }
+                    codemirror_editor.setValue(data);
+
+                    $http({
+                        method: 'POST',
+                        url: the_url,
+                        data: {
+                            action: "upload",
+                            html: data,
+                            id: id,
+                        }
+                    }).
+                    success(function (data, status, headers, config) {
+                        console.log(data)
+                        $http({
+                            method: 'POST',
+                            url: the_url,
+                            data: {
+                                action: "get",
+                                id: id,
+                            }
+                        }).
+                        success(function (data, status, headers, config) {
+                            $scope.editor_html_href=data.result.url;
+  $('#editor_html_qrcode').empty();                          $('#editor_html_qrcode').qrcode($scope.editor_html_href);
+
+                        }).
+                        error(function (data, status, headers, config) {
+                            alert(status);
+
+
+                        });
+
+                    }).
+                    error(function (data, status, headers, config) {
+                        alert(status);
+
+
+                    });
+                }
+            )
+        }
+        $scope.save = function () {
+            var id;
+            if (!$scope.document_id) {
+                id = undefined;
+            } else {
+                id = $scope.document_id;
+            }
+            $scope.saving = true;
+            $http({
+                method: 'POST',
+                url: the_url,
+                data: {
+                    action: "put",
+                    title: $scope.title,
+                    content: JSON.stringify(angular.element("#main-editor").scope().models),
+                    id: id,
+                }
+            }).
+            success(function (data, status, headers, config) {
+                console.log(data)
+                $scope.saving = false;
+                $scope.document_id = data.result.id;
+            }).
+            error(function (data, status, headers, config) {
+                alert(status);
+                $scope.saving = false;
+
+            });
+        }
+
+
+    }])
+    .controller("editorTabModel", function ($scope) {
+        var test_div = $("#editor-just-used-to-cal-jsonform");
+        test_div.jsonForm(general_block_form);
+        var general_block_default_style = JSONForm.getFormValue(test_div);
+
+
+
+        for (var i in MIOTEDITOR.models) {
+            var model = {
+                editor_model_config: MIOTEDITOR.models[i]
+            };
+            model.editor_model_config.name = MIOTEDITOR.config.models[i];
+            model.editor_general_block_style = general_block_default_style;
+            MIOTEDITOR.models[i] = model;
+            if (model.editor_model_config.model_data) {
+                test_div.jsonForm(model.editor_model_config.model_data);
+                model.editor_model_config.default_data = JSONForm.getFormValue(test_div);
+            }
+
+        }
+
+
+        setTimeout(
+            function () {
+                for (var i in MIOTEDITOR.models) {
+                    var model = MIOTEDITOR.models[i];
+
+                    function load_html(model, root) {
+                        if (model.preview) {
+                            var container = $("<div class='model-preview-wrap'></div>")
+                            container.load("models/" + model.name + "/model.html", function () {
+                                $("#model-tab>div[data-kind=" + model.kind + "]  [data-name=" + model.name + "] ").append(container)
+                                    //                                    console.log($("#model-tab>div[data-kind=" + model.kind + "]  [data-name=" + model.name + "] "))
+                                root.label = container.html();
+                                container.find("*").removeAttr("contenteditable");
+                            });
+
+                        }
+                    }
+                    load_html(model.editor_model_config, model)
+                }
+            }, 200
+        )
+
+        $scope.tabs = [
+            {
+                kind: "h",
+                name: "标题"
+                },
+            {
+                kind: "p",
+                name: "段落"
+                },
+            {
+                kind: "img",
+                name: "图片"
+                },
+            {
+                kind: "btn",
+                name: "按钮"
+                },
+            {
+                kind: "other",
+                name: "其他"
+                },
+
+            ]
+        $scope.current_tab = "h";
+        $scope.select = function (kind) {
+            $scope.current_tab = kind;
+        }
+
+        $scope.models = {
+            selected: null,
+            lists: MIOTEDITOR.models,
+        };
+
+    })
+    .directive("editorModel", ["$compile", function ($compile) {
+
+        return {
+            priority: 10,
+            scope: true,
+
+            link: function ($scope, element, attr) {
+                //                $scope.editor_tool_show = false;
+                $scope.set_value = function (values1, values2) {
+                    console.log("wwww")
+                    for (var i in values1) {
+                        $scope[i] = values1[i];
+                    }
+                    $scope.editor_general_block_style = values2;
+                }
+
+
+
+                var item = $scope.$parent.item;
+
+                if (item.editor_model_config) {
+                    if (!item.editor_model_config.initialized) {
+                        item.editor_model_config.initialized = true;
+                        angular.forEach(item.editor_model_config.default_data, function (v, k) {
+                            item[k] = v;
+                        })
+                    }
+                }
+
+
+                //                if(item.editor_model_config){
+                //                   item.editor_model_config.model_data.value=item; 
+                //                }
+
+                if (typeof (item.$$$init) == "undefined" || !typeof (item.$$$init)) {
+                    item.$$$init = true;
+                    //                    $scope.data = "www"
+                }
+
+                for (var i in item) {
+                    if (i[0] != "$" && i != "item" && i != "constructor" && typeof ($scope.$parent[i]) == "undefined") {
+                        //                            console.log(i);
+                        //                        console.log($scope)
+                        $scope[i] = item[i];
+                    }
+                }
+
+                var template = $compile(item.label)($scope);
+                console.log(template)
+
+                element.bind("mouseover", function (e) {
+
+                    //                    console.log("enter");
+                    $scope.set_current_model($scope.$index);
+
+
+                })
+                element.bind("dblclick", function (e) {
+                    console.log("dbclick")
+                })
+
+
+                element.append(template);
+
+                $scope.$watch(function (value) {
+                    //                console.log($scope)
+                    for (var i in $scope) {
+                        if (i[0] != "$" && i != "item" && i != "constructor" && typeof ($scope.$parent[i]) == "undefined") {
+                            //                            console.log(i);
+                            //                        console.log($scope)
+                            item[i] = $scope[i];
+                        }
+                    }
+                });
+            },
+            //                        template: function (tElement,tAttrs) {
+            //                            console.log(tElement,tAttrs)
+            //                            return '<h1 contenteditable ng-model="yy"  strip-br="true" select-non-editable="true">大标题3</h1><input ng-model="yy"/>'
+            //                        }
+        }
+
+    }])
+    .filter("toollist", function () {
+        return function (model_name) {
+            //            console.log(model_name);
+        };
+    })
+    .controller("editorFormController", function ($scope) {
+        $scope.submit = function (values1, values2, index) {
+            //            console.log(values)
+            $scope.$emit("form_submit", values1, values2, index)
+        }
+        $scope.close = function () {
+            $scope.$emit("form_close")
+        }
+        $scope.change = function () {
+
+        }
+
+    })
+    .controller("mainEditorController", ["$scope", "modelData", "globalPropData", function ($scope, modelData, globalPropData) {
+
+        var instance = this;
+        instance.hide_dialog = hide_dialog;
+        instance.show_dialog = show_dialog;
+
+        this.global_prop = globalPropData.prop;
+
+
+        instance.hide_dialog();
+        $scope.models = {
+            selected: null,
+            lists: [],
+            globalPropData:globalPropData.prop,
+        };
+        modelData.models = $scope.models;
+        $scope.$on("form_close", function (event) {
+            instance.hide_dialog();
+        })
+        $scope.$on("form_submit", function (event, values1, values2, index) {
+            console.log(values1)
+            angular.forEach(values1, function (v, k) {
+                list[instance.editing_index][k] = v;
+            })
+            list[instance.editing_index].editor_general_block_style = values2;
+            console.log(list[instance.editing_index])
+
+            angular.element(".editor-block[data-index=" + index + "]").scope().$apply(
+                function ($scope) {
+                    $scope.set_value(
+                        values1, values2
+                    )
+                }
+            )
+            instance.hide_dialog();
+            $scope.$digest();
+        })
+
+        function tool_set(state) {
+
+            if (state) {
+                this.style.color = "steelblue";
+            } else {
+                this.style.color = "grey";
+            }
+        }
+        var list = $scope.models.lists;
+
+        function show_dialog(name) {
+            instance.dialog_name = name;
+            instance.show_mask = true;
+            var editor = $("#editor-data-dialog")
+            editor.css("left", (parseInt($("body").css("width")) - parseInt(editor.css("width"))) / 2 + "px")
+        }
+
+        function hide_dialog() {
+            instance.show_mask = false;
+        }
+        instance.call_tool = function (name, index) {
+            for (var i in instance.editor_tools) {
+                if (name == instance.editor_tools[i].name) {
+                    return instance.editor_tools[i].callback_wrap(index);
+                }
+            }
+        }
+        instance.editor_tools = [{
+            name: "move_up",
+            icon: "glyphicon-chevron-up",
+            callback: function (index) {
+
+
+                var temp = list[index];
+                list[index] = list[index - 1];
+                list[index - 1] = temp;
+
+            },
+            check: function (index) {
+                if (index > 0)
+                    return true;
+                else {
+                    return false;
+                }
+            }
+}, {
+            name: "delete",
+            icon: "glyphicon-trash",
+            callback: function (index) {
+                if (list[index].editor_model_config) {
+                    if (confirm("是否确认删除 类型：" + list[index].editor_model_config.name + " 内容：" + list[index].label)) {
+                        list.splice(index, 1);
+
+                    }
+                }
+                
+                tool_set.call(this, false);
+
+            },
+
+}, {
+            name: "move_dowm",
+            icon: "glyphicon-chevron-down",
+            callback: function (index) {
+                var temp = list[index];
+                list[index] = list[index + 1];
+                list[index + 1] = temp;
+            },
+            check: function (index) {
+                if (index < list.length - 1)
+                    return true;
+                else {
+                    return false;
+                }
+            }
+}, {
+            name: "setting",
+            icon: "glyphicon-cog"
+}, {
+            name: "data",
+            icon: "glyphicon-th-list",
+            callback: function (index) {
+                //                console.log(instance)
+                console.log()
+
+
+                instance.editing_index = index;
+                var editing_model = angular.element(".editor-block[data-index=" + index + "]").scope();
+
+
+
+                var model_data = list[index].editor_model_config.model_data;
+                //                model_data["onSubmitValid"] =
+                //
+                //                    console.log(model_data)
+                var form_body_special = $("#editor-data-dialog").find(".panel-body.editor-form-special-prop");
+                var form_body_general = $("#editor-data-dialog").find(".panel-body.editor-form-general-prop");
+                form_body_special.empty();
+                form_body_general.empty();
+                model_data.value = list[index];
+                form_body_special.jsonForm(model_data);
+                model_data.value = undefined;
+                general_block_form.value = list[index].editor_general_block_style;
+                form_body_general.jsonForm(general_block_form);
+
+
+                instance.show_dialog(list[index].editor_model_config.name);
+                console.log(JSONForm.getFormValue(form_body_special));
+                $("#editor-data-dialog").find(".jsonform-submit").click(function () {
+                    var values1 = JSONForm.getFormValue(form_body_special);
+                    var values2 = JSONForm.getFormValue(form_body_general)
+                    console.log(values1, values2)
+                    angular.element("#editor-data-dialog").scope().submit(values1, values2, index);
+
+                })
+            },
+}, ]
+
+        angular.forEach(this.editor_tools, function (tool, index) {
+            tool.callback_wrap = function (index) {
+                if ((!this.check || this.check(index)) && this.callback)
+                    return this.callback.apply(this, arguments)
+            }
+            tool.check_wrap = function (index) {
+                if (index === false) {
+                    tool_set.call(this, false);
+                } else {
+
+                    if (this.check) {
+                        tool_set.call(this, this.check(index));
+                    } else {
+                        tool_set.call(this, true);
+                    }
+
+                }
+
+            }
+            tool.style = {
+                top: parseInt(index / 2) * 16 + "px",
+            };
+            //            console.log(tool.style, tool);
+            if (index % 2) {
+                tool.style.left = "-21px";
+            } else {
+                tool.style.right = "-21px";
+            }
+            //            console.log(tool.style);
+        })
+
+        this.tool_callback = function (name, index) {
+
+        }
+
+
+
+
+
+
+
+
+
+        $scope.ww = "wlwkllksdfsdfkl";
+        //        $scope.yy="mmmmm"
+
+        $scope.mouse_leave = function () {
+            //            $scope.editor_tool_show = -1;
+            //            console.log("leave")
+        }
+        $scope.editor_tool_show = -1;
+        $scope.set_current_model = function (index) {
+            //            console.log("set current",index)
+            //            angular.forEach($scope.models.lists, function (index, model) {
+            //                model.editor_tool_show = false;
+            //            })
+            //            $scope.models.lists[index].editor_tool_show = true;
+            $scope.$apply(
+                function () {
+                    $scope.editor_tool_show = index;
+                    //                    console.log("index", index);
+                }
+            )
+
+        }
+        for (var i = 1; i <= 3; ++i) {
+            $scope.models.lists.push({
+                label: "Item A" + i
+            });
+        }
+        // Model to JSON for demo purpose
+        var preview_timeout = "none";
+        $scope.$watch('models', function (model) {
+            list = $scope.models.lists;
+            $scope.modelAsJson = angular.toJson(model, true);
+
+            if (preview_timeout != "none")
+                clearTimeout(preview_timeout);
+            preview_timeout = setTimeout(
+                function () {
+                    preview_timeout = "none";
+
+
+                    preview_editor($("#editor-block-container")[0].outerHTML)
+                }, 1000
+            )
+
+
+
+        }, true);
+    }])
+    .factory('modelData', function () {
+
+        return new function () {
+
+        };
+    })
+
+function editor_export(callback) {
+    var miao = $("#editor-block-container").clone();
+    miao.find(".editor-only").remove();
+    var attrs = [
+                        "contenteditable",
+                        "ng-repeat",
+                        "data-index",
+                        "draggable",
+                        "ng-style",
+
+                        "ng-dblclick",
+                        "ng-click",
+                        "dnd-draggable",
+                        "dnd-effect-allowed",
+                        "dnd-selected",
+                        "dnd-list",
+                        "dnd-moved",
+
+                        "editor-model",
+                        "data-title",
+                        "ng-model",
+                        "ng-src",
+                        "strip-br",
+                        "select-non-editable",
+                        "ng-href",
+                    ]
+    attrs = attrs.join(" ")
+    var classes = [
+                        "ng-scope",
+                        "ng-pristine",
+                        "ng-untouched",
+                        "ng-valid",
+                    ]
+    classes = classes.join(" ")
+    var targets = miao.find("*");
+
+    targets.removeAttr(attrs)
+    miao.removeAttr(attrs)
+
+
+    targets.removeClass(classes)
+    miao.removeClass(classes)
+    var output = miao[0].outerHTML;
+    output = output.replace(/<!--[\w\W\r\n]*?-->/gmi, "");
+    output = output.replace(/class=""/g, "");
+    output = output.replace(/name=""/g, "");
+    //    console.log(output)
+    preview_editor(output, callback);
+}
+
+function preview_editor(data, callback) {
+    var ifa = document.createElement("iframe");
+    ifa.src = "output_tpl2.html";
+    ifa.id = "miot-html-editor-output";
+    var ifa_pre = document.getElementById("miot-html-editor-output");
+    ifa_pre.parentNode.replaceChild(ifa, ifa_pre);
+    ifa.onload = function () {
+        
+        ifa.contentDocument.title=angular.element("body").scope().title;
+        console.log(angular.element("body").scope().title);
+        ifa.contentDocument.getElementById("wrap").innerHTML = data;
+        if (callback) {
+            //            console.log($(ifa).contents().find("html")[0].outerHTML);
+
+            callback($(ifa).contents().find("html")[0].outerHTML)
+        }
+
+        var scripts = ifa.contentDocument.getElementsByTagName("script");
+        var len = scripts.length;
+
+        var to_remove = [];
+        for (var i = 0; i < len; i++) {
+
+
+            if (!scripts[i].src) {
+                to_remove.push(i);
+                var miaoS = document.createElement("script");
+                miaoS.innerHTML = scripts[i].innerHTML;
+                ifa.contentDocument.getElementById("wrap").appendChild(miaoS)
+            }
+
+        }
+        for (var i in to_remove) {
+            scripts[i].parentNode.removeChild(scripts[i])
+        }
+        //                ifa.contentDocument.getElementById("forEdit").parentNode.removeChild(ifa.contentDocument.getElementById("forEdit"))
+        //                console.log(scripts)
+
+        function getDocHeight(D) {
+
+            return Math.max(
+                Math.max(D.body.scrollHeight, D.documentElement.scrollHeight),
+                Math.max(D.body.offsetHeight, D.documentElement.offsetHeight),
+                Math.max(D.body.clientHeight, D.documentElement.clientHeight)
+            );
+        }
+
+        setTimeout(
+            function () {
+                var subWeb = ifa.contentDocument;
+                if (ifa != null && subWeb != null) {
+                    ifa.height = getDocHeight(subWeb) + 20;
+                }
+            }, 100
+        )
+    }
+}
+var global_prop_form = {
+    "schema": {
+        color: {
+            "type": "string",
+            "title": "文字颜色",
+            format: "color",
+            default: "#000000",
+        },
+        "background-color": {
+            "type": "string",
+            "title": "背景颜色",
+            format: "color",
+            default: "#white",
+        },
+        "padding-top": {
+            "type": "string",
+            "title": "上边距",
+            default: "0px",
+        },
+        "padding-bottom": {
+            "type": "string",
+            "title": "下边距",
+            default: "0px",
+
+        },
+        "padding-left": {
+            "type": "string",
+            "title": "左边距",
+            default: "0px",
+
+        },
+        "padding-right": {
+            "type": "string",
+            "title": "右边距",
+            default: "0px",
+
+        },
+    }
+}
+var general_block_form = {
+    "schema": {
+        color: {
+            "type": "string",
+            "title": "文字颜色",
+            format: "color",
+            default: "#000000",
+        },
+        "background-color": {
+            "type": "string",
+            "title": "背景颜色",
+            format: "color",
+            default: "#white",
+        },
+        "padding-top": {
+            "type": "string",
+            "title": "上边距",
+            default: "0px",
+        },
+        "padding-bottom": {
+            "type": "string",
+            "title": "下边距",
+            default: "0px",
+
+        },
+        "padding-left": {
+            "type": "string",
+            "title": "左边距",
+            default: "0px",
+
+        },
+        "padding-right": {
+            "type": "string",
+            "title": "右边距",
+            default: "0px",
+
+        },
+    }
+}

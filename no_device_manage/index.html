@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>无设备引导页文章管理</title>
+    <script src="js/angular.min.js"></script>
+    <script src="js/jquery-1.11.3.min.js"></script>
+    <style>
+        body {
+            margin: 0px;
+            font-family: Arial, Verdana, Sans-serif;
+        }
+        
+        .head {
+            border-bottom: 1px #aaa solid;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .head .des {
+            position: absolute;
+            margin-left: 40px;
+            left: 15px;
+            top: 9px;
+        }
+        
+        .head .des img {
+            height: 39px;
+            position: absolute;
+            top: -10px;
+            left: -40px;
+        }
+        
+        .head input {
+            border-radius: 3px;
+            border: 1px #888 solid;
+            height: 18px;
+        }
+        
+        .head button {
+            border-radius: 3px;
+            border: none;
+            background-color: steelblue;
+            color: white;
+            padding: 3px 5px;
+        }
+        
+        .left {
+            position: absolute;
+            width: 30%;
+            padding: 15px;
+            box-sizing: border-box;
+            left: 0px;
+            top: 43px;
+            bottom: 0px;
+            border-right: 1px #aaa solid;
+            margin: 0px;
+            overflow: auto;
+        }
+        
+        .left>li {
+            padding: 0px;
+            list-style-type: none;
+            display: block;
+            margin-bottom: 20px;
+            border: 2px solid #555;
+            padding: 10px;
+        }
+        
+        .left>li:hover {
+            border-color: steelblue;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        
+        .left>li p {
+            margin: 0px;
+        }
+        
+        .left>li>* {
+            border-bottom: 1px #aaa solid;
+        }
+        
+        .right {
+            display: block;
+            left: 30%;
+            right: 0px;
+            top: 43px;
+            bottom: 0px;
+            text-align: center;
+            position: absolute;
+            padding: 10px;
+        }
+        
+        .right iframe {
+            display: block;
+            margin: 0px;
+            width: 100%;
+        }
+        
+        .right .bottom {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        .right input {
+            width: 90%;
+            margin-bottom: 5px;
+            margin: 5px 10px;
+            box-sizing: border-box;
+        }
+        
+        .right textarea {
+            width: 90%;
+            margin: 5px 10px;
+        }
+        
+        .right button {
+            width: 50%;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .right>p {
+            border-bottom: 1px #aaa solid;
+        }
+        
+        font {
+            font-size: 13px;
+            color: #555;
+        }
+        
+        #content {
+            overflow: auto;
+            position: absolute;
+            top: 148px;
+            bottom: 117px;
+            right: 10px;
+            left: 10px;
+            border: 1px solid #aaa;
+        }
+    </style>
+</head>
+
+<body ng-app="main" ng-controller="main">
+    <div class="head">
+        <label for="" class="des"><img src="face.jpg" alt="">简陋的无设备引导页文章管理页</label>
+        <input id="search-text" type="text" ng-model="search_text">
+        <button ng-click="search(search_text)">Search</button>
+    </div>
+    <div class="main">
+        <ul class="left">
+            <li ng-repeat="art in data" ng-click="set_current(art)">
+                <p><font>Title:</font>&nbsp;&nbsp;{{art.title}}</p>
+                <p><font>Category:</font>&nbsp;&nbsp;{{art.category}}</p>
+                <p><font>PubDate:</font>&nbsp;&nbsp;{{art.pubDate}}</p>
+
+            </li>
+        </ul>
+        <div class="right">
+            <p><font>Title:</font>&nbsp;&nbsp;{{current.title}}</p>
+            <p style="float:left;"><font>Category:</font>&nbsp;&nbsp;{{current.category}}</p>
+            <p style="float:right;"><font>PubDate:</font>&nbsp;&nbsp;{{current.pubDate}}</p>
+            <p style="clear: both;text-align:left;"><font>Link:</font>&nbsp;&nbsp;<a ng-href="{{current.link}}">{{current.link}}</a></p>
+            <div id="content" style="text-align:left;">
+                {{current.description}}
+            </div>
+            <div class="bottom">
+                <textarea type="text" placeholder="Brief" ng-model="brief"></textarea>
+                <input type="text" placeholder="pic url" ng-model="pic_url">
+                <button ng-click="release()">Release</button>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        var pipeUrl = "http://support.io.mi.srv/app/shop/gpipe";
+        angular.module("main", []).controller("main", ["$scope", "$http", function ($scope, $http) {
+            $scope.release = function () {
+                $http({
+                    method: 'POST',
+                    url: pipeUrl,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded;',
+                        'Accept': "application/json, text/javascript, */*; q=0.01"
+                    },
+                    data: "data=" + angular.toJson({
+                        test: {
+                            "model": "publish",
+                            "action": "release",
+                            "parameters": {
+                                "id": $scope.current.id,
+                                "type": $scope.current.type,
+                                "brief": $scope.brief,
+                                "picurl": $scope.pic_url,
+                            }
+                        }
+                    })
+
+                }).
+                success(function (data, status, headers, config) {
+                    if (data.code == 0) {
+                        alert("发布成功");
+                    } else {
+                        alert("发布失败");
+                    }
+                }).
+                error(function (data, status, headers, config) {
+                    alert(status);
+                });
+            }
+            $scope.set_current = function (data) {
+                $scope.current = data;
+                $("#content").html(data.description)
+            }
+
+            function search(text) {
+                if(!text)
+                    text=" ";
+                $http({
+                    method: 'POST',
+                    url: pipeUrl,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded;',
+                        'Accept': "application/json, text/javascript, */*; q=0.01"
+                    },
+                    data: "data=" + angular.toJson({
+                        test: {
+                            "model": "publish",
+                            "action": "query",
+                            "parameters": {
+                                "keyword": text
+                            }
+                        }
+                    })
+
+                }).
+                success(function (data, status, headers, config) {
+
+                    $scope.data = data.result.test.data;
+                    console.log("data", $scope.data);
+                }).
+                error(function (data, status, headers, config) {
+                    alert(status);
+                });
+
+            }
+            $scope.search=function(text){
+                search(text);
+            }
+            var key_word="手机"
+            search(key_word);
+            $scope.search_text=key_word;
+
+
+        }])
+
+
+    </script>
+</body>
+
+</html>
